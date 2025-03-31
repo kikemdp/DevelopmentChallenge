@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using DevelopmentChallenge.Data.Classes;
 using NUnit.Framework;
 
@@ -50,6 +51,8 @@ namespace DevelopmentChallenge.Data.Tests
         [TestCase]
         public void TestResumenListaConMasTipos()
         {
+            CultureInfo.CurrentCulture = new CultureInfo("es-ES");
+
             var formas = new List<FormaGeometrica>
             {
                 new FormaGeometrica(FormaGeometrica.Cuadrado, 5),
@@ -71,6 +74,8 @@ namespace DevelopmentChallenge.Data.Tests
         [TestCase]
         public void TestResumenListaConMasTiposEnCastellano()
         {
+            CultureInfo.CurrentCulture = new CultureInfo("es-ES");
+
             var formas = new List<FormaGeometrica>
             {
                 new FormaGeometrica(FormaGeometrica.Cuadrado, 5),

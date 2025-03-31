@@ -14,160 +14,93 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using DevelopmentChallenge.Data.Formas;
+using DevelopmentChallenge.Data.Implementaciones;
+using DevelopmentChallenge.Data.Reportes;
+using DevelopmentChallenge.Data.Traductor;
 
 namespace DevelopmentChallenge.Data.Classes
 {
-    public class FormaGeometrica
+    // ====================================================  
+    // Fachada para compatibilidad con los tests originales  
+    // ====================================================
+    /// <summary>
+    /// Esta clase se dejó para poder cumplir con los tests originales (sin reescribirlos),
+    /// pero ahora usa una forma interna que es la que realmente implementa la lógica
+    /// </summary>
+    public class FormaGeometrica : FormaGeometricaBase
     {
-        #region Formas
-
+        // Constantes para tipos y para idiomas
         public const int Cuadrado = 1;
         public const int TrianguloEquilatero = 2;
         public const int Circulo = 3;
         public const int Trapecio = 4;
 
-        #endregion
-
-        #region Idiomas
-
         public const int Castellano = 1;
         public const int Ingles = 2;
+        public const int Italiano = 3;
 
-        #endregion
-
+        // Campos para recordar el tipo y el ancho (o lado) (los tests solo pasan un valor para el lado)
+        private readonly int _tipo;
         private readonly decimal _lado;
 
-        public int Tipo { get; set; }
+        // Instancia interna que representa la forma concreta
+        private FormaGeometricaBase _formaInterna;
 
-        public FormaGeometrica(int tipo, decimal ancho)
+        // Constructor legacy que usan los tests
+        public FormaGeometrica(int tipo, decimal lado) : base(null)
         {
-            Tipo = tipo;
-            _lado = ancho;
+            _tipo = tipo;
+            _lado = lado;
+            // Se crea la forma interna usando un traductor por defecto (Ingles)
+            _formaInterna = CrearForma(tipo, lado, new TraductorIngles());
         }
 
-        public static string Imprimir(List<FormaGeometrica> formas, int idioma)
-        {
-            var sb = new StringBuilder();
-
-            if (!formas.Any())
-            {
-                if (idioma == Castellano)
-                    sb.Append("<h1>Lista vacía de formas!</h1>");
-                else
-                    sb.Append("<h1>Empty list of shapes!</h1>");
-            }
-            else
-            {
-                // Hay por lo menos una forma
-                // HEADER
-                if (idioma == Castellano)
-                    sb.Append("<h1>Reporte de Formas</h1>");
-                else
-                    // default es inglés
-                    sb.Append("<h1>Shapes report</h1>");
-
-                var numeroCuadrados = 0;
-                var numeroCirculos = 0;
-                var numeroTriangulos = 0;
-
-                var areaCuadrados = 0m;
-                var areaCirculos = 0m;
-                var areaTriangulos = 0m;
-
-                var perimetroCuadrados = 0m;
-                var perimetroCirculos = 0m;
-                var perimetroTriangulos = 0m;
-
-                for (var i = 0; i < formas.Count; i++)
-                {
-                    if (formas[i].Tipo == Cuadrado)
-                    {
-                        numeroCuadrados++;
-                        areaCuadrados += formas[i].CalcularArea();
-                        perimetroCuadrados += formas[i].CalcularPerimetro();
-                    }
-                    if (formas[i].Tipo == Circulo)
-                    {
-                        numeroCirculos++;
-                        areaCirculos += formas[i].CalcularArea();
-                        perimetroCirculos += formas[i].CalcularPerimetro();
-                    }
-                    if (formas[i].Tipo == TrianguloEquilatero)
-                    {
-                        numeroTriangulos++;
-                        areaTriangulos += formas[i].CalcularArea();
-                        perimetroTriangulos += formas[i].CalcularPerimetro();
-                    }
-                }
-                
-                sb.Append(ObtenerLinea(numeroCuadrados, areaCuadrados, perimetroCuadrados, Cuadrado, idioma));
-                sb.Append(ObtenerLinea(numeroCirculos, areaCirculos, perimetroCirculos, Circulo, idioma));
-                sb.Append(ObtenerLinea(numeroTriangulos, areaTriangulos, perimetroTriangulos, TrianguloEquilatero, idioma));
-
-                // FOOTER
-                sb.Append("TOTAL:<br/>");
-                sb.Append(numeroCuadrados + numeroCirculos + numeroTriangulos + " " + (idioma == Castellano ? "formas" : "shapes") + " ");
-                sb.Append((idioma == Castellano ? "Perimetro " : "Perimeter ") + (perimetroCuadrados + perimetroTriangulos + perimetroCirculos).ToString("#.##") + " ");
-                sb.Append("Area " + (areaCuadrados + areaCirculos + areaTriangulos).ToString("#.##"));
-            }
-
-            return sb.ToString();
-        }
-
-        private static string ObtenerLinea(int cantidad, decimal area, decimal perimetro, int tipo, int idioma)
-        {
-            if (cantidad > 0)
-            {
-                if (idioma == Castellano)
-                    return $"{cantidad} {TraducirForma(tipo, cantidad, idioma)} | Area {area:#.##} | Perimetro {perimetro:#.##} <br/>";
-
-                return $"{cantidad} {TraducirForma(tipo, cantidad, idioma)} | Area {area:#.##} | Perimeter {perimetro:#.##} <br/>";
-            }
-
-            return string.Empty;
-        }
-
-        private static string TraducirForma(int tipo, int cantidad, int idioma)
+        // fábrica para crear la forma concreta según el tipo
+        private static FormaGeometricaBase CrearForma(int tipo, decimal lado, ITraductor traductor)
         {
             switch (tipo)
             {
                 case Cuadrado:
-                    if (idioma == Castellano) return cantidad == 1 ? "Cuadrado" : "Cuadrados";
-                    else return cantidad == 1 ? "Square" : "Squares";
+                    return new Cuadrado(lado, traductor);
                 case Circulo:
-                    if (idioma == Castellano) return cantidad == 1 ? "Círculo" : "Círculos";
-                    else return cantidad == 1 ? "Circle" : "Circles";
+                    return new Circulo(lado/2, traductor);
                 case TrianguloEquilatero:
-                    if (idioma == Castellano) return cantidad == 1 ? "Triángulo" : "Triángulos";
-                    else return cantidad == 1 ? "Triangle" : "Triangles";
-            }
-
-            return string.Empty;
-        }
-
-        public decimal CalcularArea()
-        {
-            switch (Tipo)
-            {
-                case Cuadrado: return _lado * _lado;
-                case Circulo: return (decimal)Math.PI * (_lado / 2) * (_lado / 2);
-                case TrianguloEquilatero: return ((decimal)Math.Sqrt(3) / 4) * _lado * _lado;
+                    return new TrianguloEquilatero(lado, traductor);
                 default:
-                    throw new ArgumentOutOfRangeException(@"Forma desconocida");
+                    throw new ArgumentOutOfRangeException("Tipo de forma desconocido o parámetros insuficientes");
             }
         }
 
-        public decimal CalcularPerimetro()
+        // Los métodos se delegan a la forma interna
+        public override decimal CalcularArea() => _formaInterna.CalcularArea();
+        public override decimal CalcularPerimetro() => _formaInterna.CalcularPerimetro();
+        public override string ObtenerNombre(bool plural) => _formaInterna.ObtenerNombre(plural);
+
+        // Método estático legacy para imprimir el reporte
+        public static string Imprimir(List<FormaGeometrica> formas, int idioma)
         {
-            switch (Tipo)
-            {
-                case Cuadrado: return _lado * 4;
-                case Circulo: return (decimal)Math.PI * _lado;
-                case TrianguloEquilatero: return _lado * 3;
-                default:
-                    throw new ArgumentOutOfRangeException(@"Forma desconocida");
-            }
+                ITraductor traductor;
+                switch (idioma)
+                {
+                    case Castellano:
+                        traductor = new TraductorCastellano();
+                        break;
+                    case Italiano:
+                        traductor = new TraductorItaliano();
+                        break;
+                    default:
+                        traductor = new TraductorIngles();
+                        break;
+                }
+
+                // Reconstruir cada forma usando el traductor adecuado (esto permite que los nombres se traduzcan según el idioma solicitado)
+                List<FormaGeometricaBase> nuevasFormas = formas
+                .Select(f => CrearForma(f._tipo, f._lado, traductor))
+                .ToList();
+
+            ReporteFormas reporte = new ReporteFormas(traductor);
+            return reporte.Imprimir(nuevasFormas);
         }
     }
-}
+    }
